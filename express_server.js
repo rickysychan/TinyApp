@@ -1,5 +1,8 @@
 var express = require("express");
+var cookieParser = require('cookie-parser');
 var app = express();
+app.use(cookieParser());
+
 var PORT = process.env.PORT || 8080; // default port 8080
 
 const bodyParser = require("body-parser");
@@ -13,7 +16,10 @@ var urlDatabase = {
 };
 
 app.get("/", (req, res) => {
-   let templateVars = { urls: urlDatabase };
+   let templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"]
+   };
   res.render("urls_index", templateVars);
 });
 
@@ -26,7 +32,10 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase };
+  let templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"]
+  };
   res.render("urls_index", templateVars);
 });
 
@@ -35,7 +44,10 @@ app.get("/urls", (req, res) => {
 // it passes the whole data base into the template named as urls
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+   let templateVars = {
+    username: req.cookies["username"]
+  };
+  res.render("urls_new", templateVars);
 });
 
 // this renders the urls_new template which allows the user to ONLY enter a long url and
@@ -43,6 +55,7 @@ app.get("/urls/new", (req, res) => {
 // method post with the /urls path which activates the below router
 
 app.post("/urls", (req, res) => {
+  console.log("post /urls")
   let result = generateRandomString(6, possibleValues)
   urlDatabase[result] = req.body.longURL
   res.redirect("http://localhost:8080/urls/");
@@ -64,11 +77,12 @@ app.post("/urls/:shortUrl/delete", (req, res) => {
 
 app.get("/urls/:shortUrl", (req, res) => {
   let templateVars = {
+    username: req.cookies["username"],
     urls: urlDatabase,
     longUrl: urlDatabase[req.params.shortUrl],
     shortUrl: req.params.shortUrl
   }
-  res.render("urls_show", templateVars  );
+  res.render("urls_show", templateVars);
 });
 
 // this router recieves a short url (denoted by the semicolon), stores the database,
@@ -90,6 +104,18 @@ app.post("/urls/:shortUrl/updated", (req, res) => {
 //   res.redirect(longURL);
 // });
 
+app.post("/login", (req, res) => {
+  res.cookie("username", req.body.username);
+  res.redirect("http://localhost:8080/urls/")
+});
+
+// this sets the cookie to the string name "username" to req.body.username and redirects
+// to urls. info is passed in from the partial header form
+
+app.post("/logout", (req, res) => {
+  res.clearCookie("username");
+  res.redirect("http://localhost:8080/urls/")
+});
 
 
 const possibleValues = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
