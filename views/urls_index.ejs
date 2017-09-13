@@ -4,10 +4,9 @@
   <title>TinyApp</title>
 </head>
 <body>
-<header>
-        <% include ./partials/_header %>
-    </header>
-   <ul>
+    <% include ./partials/_header %>
+    <form method="POST" action="/urls/9sm5xK/delete">...</form>
+    <ul>
   <% for(key in urls) { %>
         <li><%= key + ": " + urls[key] %> - </li>
     <% }; %>
