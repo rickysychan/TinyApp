@@ -1,11 +1,16 @@
 <!-- views/partials/header.ejs -->
 
 <!DOCTYPE html>
+
 <html>
   <head>
     <title></title>
   </head>
+  <h1> Header </h1>
   <body>
-  <h1> header </h1>
-  </body>
+  <form action="/login" method="POST" style="margin:10px;">
+      <label for="username">Enter a Username:</label>
+      <input id="username" type="text" name="username" placeholder="Your username here" style="width: 125px">
+      <input type="submit" value="Submit">
+  <body>
 </html>
