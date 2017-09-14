@@ -102,7 +102,10 @@ app.post("/urls/:shortUrl/updated", (req, res) => {
 // the user is redirected to urls becasue /urls/:shortUrl/updated has not template rendered
 
 app.get("/register", (req, res) => {
-  res.render("urls_email_form");
+  let templateVars = {
+    username: req.cookies["username"]
+   };
+  res.render("urls_email_form", templateVars);
 });
 
 // renders the email form page with forms for email and password
@@ -112,8 +115,6 @@ app.post("/register", (req, res) => {
   let result = generateRandomString(4, possibleValues)
   req.body.id = result;
   users[result] =  req.body
-  console.log(users)
-  res.cookie("username", req.body.username);
   res.redirect("http://localhost:8080/urls/")
 });
 
