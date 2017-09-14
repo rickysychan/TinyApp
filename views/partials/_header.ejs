@@ -1,11 +1,25 @@
 <!-- views/partials/header.ejs -->
 
 <!DOCTYPE html>
+
 <html>
   <head>
     <title></title>
   </head>
+  <h1> Header </h1>
   <body>
-  <h1> header </h1>
-  </body>
+  <% if(username){ %>
+   <form action="/logout" method="POST" style="margin:10px;">
+      <input type="submit" value="Logout">
+      <%= username %>
+  </form>
+ <% } else{ %>
+  <form action="/login" method="POST" style="margin:10px;">
+      <label for="username">Enter a Username:</label>
+      <input id="username" type="text" name="username" placeholder="Your username here" style="width: 125px">
+      <input type="submit" value="Submit">
+      <%= username %>
+  </form>
+<% } %>
+  <body>
 </html>

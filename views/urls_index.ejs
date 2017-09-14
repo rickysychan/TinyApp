@@ -9,11 +9,12 @@
     </header>
 
   <% for(key in urls) { %>
-
+<h4>
         <form method="POST" action="/urls/<%= key %>/delete">
         <%= key + ": " + urls[key] %>
         <a href="/urls/<%= key %>">update</a>
 <input type="submit" value="Delete">
+</h4>
 </form>
     <% }; %>
 
