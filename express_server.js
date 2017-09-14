@@ -15,12 +15,24 @@ var urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-let users = {}
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
+  }
+}
 
 app.get("/", (req, res) => {
+   const userId = req.cookies["user_id"];
    let templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"]
+    user: users[userId]
    };
   res.render("urls_index", templateVars);
 });
@@ -34,9 +46,10 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+ const userId = req.cookies["user_id"];
   let templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"]
+    user: users[userId]
   };
   res.render("urls_index", templateVars);
 });
@@ -46,8 +59,9 @@ app.get("/urls", (req, res) => {
 // it passes the whole data base into the template named as urls
 
 app.get("/urls/new", (req, res) => {
-   let templateVars = {
-    username: req.cookies["username"]
+const userId = req.cookies["user_id"];
+  let templateVars = {
+  user: users[userId]
   };
   res.render("urls_new", templateVars);
 });
@@ -78,8 +92,9 @@ app.post("/urls/:shortUrl/delete", (req, res) => {
 // occurs and immediately the user is redirected to urls which renders urls_index
 
 app.get("/urls/:shortUrl", (req, res) => {
+const userId = req.cookies["user_id"];
   let templateVars = {
-    username: req.cookies["username"],
+    user: users[userId],
     urls: urlDatabase,
     longUrl: urlDatabase[req.params.shortUrl],
     shortUrl: req.params.shortUrl
@@ -102,8 +117,9 @@ app.post("/urls/:shortUrl/updated", (req, res) => {
 // the user is redirected to urls becasue /urls/:shortUrl/updated has not template rendered
 
 app.get("/register", (req, res) => {
+  const userId = req.cookies["user_id"];
   let templateVars = {
-    username: req.cookies["username"]
+    user: users[userId]
    };
   res.render("urls_email_form", templateVars);
 });
@@ -111,26 +127,82 @@ app.get("/register", (req, res) => {
 // renders the email form page with forms for email and password
 
 app.post("/register", (req, res) => {
-  // I have to get the object from req and push it onto users object
-  let result = generateRandomString(4, possibleValues)
-  req.body.id = result;
-  users[result] =  req.body
-  res.redirect("http://localhost:8080/urls/")
+
+for(var i in users){
+  if(req.body.email.toLowerCase() == users[i].email.toLowerCase())
+  {
+    res.status(400).send("e-mail is already existing in user's database.");
+    res.redirect("/register");
+    return;
+    }
+  }
+
+// this checks to see if the email entered into the form already exist in users or not
+// if it does exist, it sends a status400 code
+
+if (req.body.email === '' || req.body.password === '')
+    {
+    res.status(400).send("No email or password has been entered.");
+    return;
+    }
+
+      let result = generateRandomString(4, possibleValues);
+      users[result] = {id: result, email: req.body.email, password: req.body.password}
+      res.cookie("user_id", result)
+      res.redirect("/urls");
+      return;
+  console.log(users)
 });
+
+// this first part checks to see if the user enters nothing and if they do it sends a
+// status code400, if the global object users is empty than it will add the object to users
+// and sets the cookie to the random user generated id which is called by other get routers
+// to be interepreted as an object by referencing it as const userId = req.cookies["user_id"];
+// which is interpolated in user: users[userId] to represent the user object. but the header
+// only displays the random id
+
+
 
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
-  res.redirect("http://localhost:8080/urls/")
-});
+  var check = false
+  for(var i in users){
+    console.log(users[i])
+    if(req.body.email === users[i].email && req.body.password === users[i].password )
+    {
+      res.cookie("user_id", users[i].id);
+      check = true
+    }
+  }
 
-// this sets the cookie to the string name "username" to req.body.username and redirects
-// to urls. info is passed in from the partial header form
+
+//this checks to see if the email and password entered into the login page exists in the
+//users object, if it does it sets the cookie to the id of the user object, if not look below
+
+  if (check) {
+    res.redirect("/")
+  } else {
+    res.status(403).send("E-mail or password not correct or account not registered");
+  }
+})
+
+//if email and password not found, statuscode 403 if pass redirects to /
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("http://localhost:8080/urls/")
 });
 
+//this clears the cookie when you click logout and redircts to urls
+
+app.get("/login", (req, res) => {
+  const userId = req.cookies["user_id"];
+  let templateVars = {
+    user: users[userId]
+   };
+  res.render("login_page", templateVars);
+});
+
+//
 
 const possibleValues = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
@@ -145,5 +217,3 @@ function generateRandomString(length, chars) {
 app.listen(PORT, () => {
   console.log(`TinyApp listening on port ${PORT}!`);
 });
-
-//moo
