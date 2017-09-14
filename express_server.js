@@ -10,9 +10,11 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 app.set("view engine", "ejs")
 
+let userURLs = ''
+
 var urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {userId: "userRandomID", url: "http://www.lighthouselabs.ca"},
+  "9sm5xK": {userId: "userRandomID", url: "http://www.google.com"}
 };
 
 const users = {
@@ -29,13 +31,8 @@ const users = {
 }
 
 app.get("/", (req, res) => {
-   const userId = req.cookies["user_id"];
-   let templateVars = {
-    urls: urlDatabase,
-    user: users[userId]
-   };
-  res.render("urls_index", templateVars);
-});
+res.end("<html><body>Hello <b>World</b></body></html>\n")
+})
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
@@ -45,10 +42,23 @@ app.get("/hello", (req, res) => {
   res.end("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+//==========================================================================================
+
 app.get("/urls", (req, res) => {
+  var myUrls = {};
+    for(var i in urlDatabase){
+    if(urlDatabase[i].userId === req.cookies['user_id'])
+      {
+        myUrls[i] = urlDatabase[i];
+  }
+}
+// this checks to see if the database has the same id properties for the urls liste
+// as the one in the cookies, if it does, add the urls to the page and display it
+//
+
  const userId = req.cookies["user_id"];
   let templateVars = {
-    urls: urlDatabase,
+    urls: myUrls,
     user: users[userId]
   };
   res.render("urls_index", templateVars);
@@ -60,10 +70,16 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
 const userId = req.cookies["user_id"];
-  let templateVars = {
-  user: users[userId]
-  };
-  res.render("urls_new", templateVars);
+if(users[req.cookies["user_id"]] === undefined){
+  res.redirect("/login")
+  return;
+} else {
+    let templateVars = {
+      user: users[userId]
+      };
+    res.render("urls_new", templateVars);
+    return;
+  }
 });
 
 // this renders the urls_new template which allows the user to ONLY enter a long url and
@@ -73,7 +89,7 @@ const userId = req.cookies["user_id"];
 app.post("/urls", (req, res) => {
   console.log("post /urls")
   let result = generateRandomString(6, possibleValues)
-  urlDatabase[result] = req.body.longURL
+  urlDatabase[result] = { userId: req.cookies["user_id"], url: req.body.longURL };
   res.redirect("http://localhost:8080/urls/");
 });
 
@@ -93,22 +109,28 @@ app.post("/urls/:shortUrl/delete", (req, res) => {
 
 app.get("/urls/:shortUrl", (req, res) => {
 const userId = req.cookies["user_id"];
+
   let templateVars = {
+    objectOwner: urlDatabase[req.params.shortUrl].userId,
+    cookieId: users[userId].id,
     user: users[userId],
     urls: urlDatabase,
-    longUrl: urlDatabase[req.params.shortUrl],
+    longUrl: urlDatabase[req.params.shortUrl].url,
     shortUrl: req.params.shortUrl
   }
   res.render("urls_show", templateVars);
 });
 
+app.get("/u/:shortUrl", (req, res) => {
+res.redirect(urlDatabase[req.params.shortUrl].url)
+})
 // this router recieves a short url (denoted by the semicolon), stores the database,
 // longUrl and the short url into the templatevars and passes it to urls_show.
 //** remember that url info is in the params and everything submitted in the form is body
 // urls_show lets the user enter a new url which is stored as updatedLongURL
 
 app.post("/urls/:shortUrl/updated", (req, res) => {
-  urlDatabase[req.params.shortUrl] = req.body.UpdatedLongURL;
+  urlDatabase[req.params.shortUrl].url = req.body.UpdatedLongURL;
   res.redirect("http://localhost:8080/urls/")
 });
 

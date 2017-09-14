@@ -1,19 +1,10 @@
-const object = {
-  klias: {
-    Name: Ricky
-    job: teacher
-    salary: low
-  }
+var urlDatabase = {
+  "b2xVn2": {userId: "userRandomID", url: "http://www.lighthouselabs.ca"},
+  "9sm5xK": {userId: "userRandomID", url: "http://www.google.com"}
+};
 
-  IOASU: {
-    Name: Vivian
-    job: ADOC
-    salary: high
-  }
+
+for(var i in urlDatabase){
 }
 
-for(i in object){
- if(vivan == object[i].name){
-  console.log("yes")
-  }
-}
+console.log(urlDatabase[i].url)
