@@ -1,6 +1,19 @@
-object = { "key1": "moo",
-           "key2:": "poo"}
+const object = {
+  klias: {
+    Name: Ricky
+    job: teacher
+    salary: low
+  }
 
-object["key3"] = "noo"
+  IOASU: {
+    Name: Vivian
+    job: ADOC
+    salary: high
+  }
+}
 
-console.log(object)
+for(i in object){
+ if(vivan == object[i].name){
+  console.log("yes")
+  }
+}
