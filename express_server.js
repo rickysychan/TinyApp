@@ -12,6 +12,8 @@ var urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+let users = {}
+
 app.get("/", (req, res) => {
    let templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
@@ -85,11 +87,20 @@ app.post("/urls/:shortUrl/updated", (req, res) => {
 // activates this router which updates the key with the entered link
 // the user is redirected to urls becasue /urls/:shortUrl/updated has not template rendered
 
-// app.get("/urls/:shortUrl", (req, res) => {
-//   let longURL = urlDatabase[req.params.shortUrl]
-//   res.redirect(longURL);
-// });
+app.get("/register", (req, res) => {
+  res.render("urls_email_form");
+});
 
+// renders the email form page with forms for email and password
+
+app.post("/register", (req, res) => {
+  // I have to get the object from req and push it onto users object
+  let result = generateRandomString(4, possibleValues)
+  req.body.id = result;
+  users[result] =  req.body
+  console.log(users)
+  res.redirect("http://localhost:8080/urls/")
+});
 
 
 const possibleValues = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
