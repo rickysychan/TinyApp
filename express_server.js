@@ -1,12 +1,18 @@
-var express = require("express");
-var cookieParser = require('cookie-parser');
-var app = express();
-app.use(cookieParser());
-
 var PORT = process.env.PORT || 8080; // default port 8080
+
+var express = require("express");
+var bcrypt = require('bcrypt');
+var app = express();
+var cookieSession = require('cookie-session')
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
+
+app.use(cookieSession({
+  name: 'session',
+  keys: ["pepsicola"],
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}))
 
 app.set("view engine", "ejs")
 
@@ -47,7 +53,7 @@ app.get("/hello", (req, res) => {
 app.get("/urls", (req, res) => {
   var myUrls = {};
     for(var i in urlDatabase){
-    if(urlDatabase[i].userId === req.cookies['user_id'])
+    if(urlDatabase[i].userId === req.session.user_id)
       {
         myUrls[i] = urlDatabase[i];
   }
@@ -56,7 +62,7 @@ app.get("/urls", (req, res) => {
 // as the one in the cookies, if it does, add the urls to the page and display it
 //
 
- const userId = req.cookies["user_id"];
+ const userId = req.session.user_id;
   let templateVars = {
     urls: myUrls,
     user: users[userId]
@@ -69,8 +75,11 @@ app.get("/urls", (req, res) => {
 // it passes the whole data base into the template named as urls
 
 app.get("/urls/new", (req, res) => {
-const userId = req.cookies["user_id"];
-if(users[req.cookies["user_id"]] === undefined){
+const userId = req.session.user_id;
+if(users[req.session.user_id] == undefined){
+  console.log(users[req.session.user_id] === undefined)
+  console.log("cookie user id: ", req.session.user_id)
+  console.log("users ", users);
   res.redirect("/login")
   return;
 } else {
@@ -89,7 +98,7 @@ if(users[req.cookies["user_id"]] === undefined){
 app.post("/urls", (req, res) => {
   console.log("post /urls")
   let result = generateRandomString(6, possibleValues)
-  urlDatabase[result] = { userId: req.cookies["user_id"], url: req.body.longURL };
+  urlDatabase[result] = { userId: req.session.user_id, url: req.body.longURL };
   res.redirect("http://localhost:8080/urls/");
 });
 
@@ -108,7 +117,11 @@ app.post("/urls/:shortUrl/delete", (req, res) => {
 // occurs and immediately the user is redirected to urls which renders urls_index
 
 app.get("/urls/:shortUrl", (req, res) => {
-const userId = req.cookies["user_id"];
+const userId = req.session.user_id;
+
+if(users[req.session.user_id] == undefined){
+  res.status(403).send('You do not own this short url so you cannot update it')
+}
 
   let templateVars = {
     objectOwner: urlDatabase[req.params.shortUrl].userId,
@@ -139,7 +152,7 @@ app.post("/urls/:shortUrl/updated", (req, res) => {
 // the user is redirected to urls becasue /urls/:shortUrl/updated has not template rendered
 
 app.get("/register", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   let templateVars = {
     user: users[userId]
    };
@@ -169,55 +182,66 @@ if (req.body.email === '' || req.body.password === '')
     }
 
       let result = generateRandomString(4, possibleValues);
-      users[result] = {id: result, email: req.body.email, password: req.body.password}
-      res.cookie("user_id", result)
+      let password = req.body.password;
+      let hashedPassword = bcrypt.hashSync(password, 10);
+      users[result] = {id: result, email: req.body.email, password: hashedPassword}
+      req.session.user_id = result;
+      console.log(users);
       res.redirect("/urls");
       return;
-  console.log(users)
+
 });
 
 // this first part checks to see if the user enters nothing and if they do it sends a
 // status code400, if the global object users is empty than it will add the object to users
 // and sets the cookie to the random user generated id which is called by other get routers
-// to be interepreted as an object by referencing it as const userId = req.cookies["user_id"];
+// to be interepreted as an object by referencing it as const userId = req.session["user_id"];
 // which is interpolated in user: users[userId] to represent the user object. but the header
 // only displays the random id
 
 
 
 app.post("/login", (req, res) => {
-  var check = false
-  for(var i in users){
-    console.log(users[i])
-    if(req.body.email === users[i].email && req.body.password === users[i].password )
-    {
-      res.cookie("user_id", users[i].id);
-      check = true
+  var check = false;
+  for(var i in users) {
+    if(req.body.email === users[i].email) {
+      check = true;
+    }
+
+    if(check) {
+      bcrypt.compare(req.body.password, users[i].password, (err, matched) => {
+        if (matched) {
+          res.cookie('user_id', users[i].id)
+          res.redirect('/urls')
+        } else {
+          res.status(403).send('password or email does not match please try again.');
+        }
+      });
     }
   }
+
+  if(check === false) {
+    res.status(403).send('password or email does not match please try again.')
+  }
+
+});
 
 
 //this checks to see if the email and password entered into the login page exists in the
 //users object, if it does it sets the cookie to the id of the user object, if not look below
 
-  if (check) {
-    res.redirect("/")
-  } else {
-    res.status(403).send("E-mail or password not correct or account not registered");
-  }
-})
 
 //if email and password not found, statuscode 403 if pass redirects to /
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
-  res.redirect("http://localhost:8080/urls/")
+  delete req.session.user_id;
+  res.redirect("http://localhost:8080/urls/");
 });
 
 //this clears the cookie when you click logout and redircts to urls
 
 app.get("/login", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   let templateVars = {
     user: users[userId]
    };
