@@ -37,7 +37,11 @@ const users = {
 }
 
 app.get("/", (req, res) => {
-res.end("<html><body>Hello <b>World</b></body></html>\n")
+  if(users[req.session.user_id] == undefined){
+    res.redirect("/login")
+  } else {
+    res.redirect("/urls")
+  }
 })
 
 app.get("/urls.json", (req, res) => {
@@ -52,21 +56,22 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   var myUrls = {};
-    for(var i in urlDatabase){
+  for(var i in urlDatabase) {
     if(urlDatabase[i].userId === req.session.user_id)
-      {
-        myUrls[i] = urlDatabase[i];
+    {
+      myUrls[i] = urlDatabase[i];
+    }
   }
-}
-// this checks to see if the database has the same id properties for the urls liste
-// as the one in the cookies, if it does, add the urls to the page and display it
-//
+  // this checks to see if the database has the same id properties for the urls liste
+  // as the one in the cookies, if it does, add the urls to the page and display it
+  //
 
- const userId = req.session.user_id;
+  const userId = req.session.user_id;
   let templateVars = {
     urls: myUrls,
     user: users[userId]
   };
+
   res.render("urls_index", templateVars);
 });
 
@@ -75,17 +80,17 @@ app.get("/urls", (req, res) => {
 // it passes the whole data base into the template named as urls
 
 app.get("/urls/new", (req, res) => {
-const userId = req.session.user_id;
-if(users[req.session.user_id] == undefined){
-  console.log(users[req.session.user_id] === undefined)
-  console.log("cookie user id: ", req.session.user_id)
-  console.log("users ", users);
-  res.redirect("/login")
-  return;
-} else {
+  const userId = req.session.user_id;
+  if(users[req.session.user_id] == undefined){
+    console.log(users[req.session.user_id] === undefined)
+    console.log("cookie user id: ", req.session.user_id)
+    console.log("users ", users);
+    res.redirect("/login")
+    return;
+  } else {
     let templateVars = {
       user: users[userId]
-      };
+    };
     res.render("urls_new", templateVars);
     return;
   }
@@ -106,6 +111,12 @@ app.post("/urls", (req, res) => {
 // both the short url (key) and long url (value) in the database
 
 app.post("/urls/:shortUrl/delete", (req, res) => {
+
+  if(urlDatabase[req.params.shortUrl] === undefined){
+    res.status(403).send('You are not logged in')
+    return
+  }
+
   delete urlDatabase[req.params.shortUrl]
   res.redirect("http://localhost:8080/urls/")
 });
@@ -117,11 +128,18 @@ app.post("/urls/:shortUrl/delete", (req, res) => {
 // occurs and immediately the user is redirected to urls which renders urls_index
 
 app.get("/urls/:shortUrl", (req, res) => {
-const userId = req.session.user_id;
 
-if(users[req.session.user_id] == undefined){
-  res.status(403).send('You do not own this short url so you cannot update it')
-}
+  const userId = req.session.user_id;
+
+  if(urlDatabase[req.params.shortUrl] === undefined){
+    res.status(403).send('This url does not exist')
+    return
+  }
+
+  if(users[req.session.user_id] == undefined){
+    res.status(403).send('You do not own this short url so you cannot update it')
+    return
+  }
 
   let templateVars = {
     objectOwner: urlDatabase[req.params.shortUrl].userId,
@@ -135,7 +153,12 @@ if(users[req.session.user_id] == undefined){
 });
 
 app.get("/u/:shortUrl", (req, res) => {
-res.redirect(urlDatabase[req.params.shortUrl].url)
+  if(urlDatabase[req.params.shortUrl] === undefined){
+    res.status(403).send('This url does not exist')
+    return
+  }
+
+  res.redirect(urlDatabase[req.params.shortUrl].url)
 })
 // this router recieves a short url (denoted by the semicolon), stores the database,
 // longUrl and the short url into the templatevars and passes it to urls_show.
@@ -143,6 +166,11 @@ res.redirect(urlDatabase[req.params.shortUrl].url)
 // urls_show lets the user enter a new url which is stored as updatedLongURL
 
 app.post("/urls/:shortUrl/updated", (req, res) => {
+
+  if(urlDatabase[req.params.shortUrl] === undefined){
+    res.status(403).send('you are not logged in')
+    return
+  }
   urlDatabase[req.params.shortUrl].url = req.body.UpdatedLongURL;
   res.redirect("http://localhost:8080/urls/")
 });
@@ -152,10 +180,14 @@ app.post("/urls/:shortUrl/updated", (req, res) => {
 // the user is redirected to urls becasue /urls/:shortUrl/updated has not template rendered
 
 app.get("/register", (req, res) => {
+
+  if(users[req.session.user_id] !== undefined){
+    res.redirect("/urls");
+  }
   const userId = req.session.user_id;
   let templateVars = {
     user: users[userId]
-   };
+  };
   res.render("urls_email_form", templateVars);
 });
 
@@ -163,33 +195,31 @@ app.get("/register", (req, res) => {
 
 app.post("/register", (req, res) => {
 
-for(var i in users){
-  if(req.body.email.toLowerCase() == users[i].email.toLowerCase())
-  {
-    res.status(400).send("e-mail is already existing in user's database.");
-    res.redirect("/register");
-    return;
+  for(var i in users){
+    if(req.body.email.toLowerCase() == users[i].email.toLowerCase())
+    {
+      res.status(400).send("e-mail is already existing in user's database.");
+      res.redirect("/register");
+      return;
     }
   }
 
-// this checks to see if the email entered into the form already exist in users or not
-// if it does exist, it sends a status400 code
+  // this checks to see if the email entered into the form already exist in users or not
+  // if it does exist, it sends a status400 code
 
-if (req.body.email === '' || req.body.password === '')
-    {
+  if (req.body.email === '' || req.body.password === '')
+  {
     res.status(400).send("No email or password has been entered.");
     return;
-    }
+  }
 
-      let result = generateRandomString(4, possibleValues);
-      let password = req.body.password;
-      let hashedPassword = bcrypt.hashSync(password, 10);
-      users[result] = {id: result, email: req.body.email, password: hashedPassword}
-      req.session.user_id = result;
-      console.log(users);
-      res.redirect("/urls");
-      return;
-
+  let result = generateRandomString(4, possibleValues);
+  let password = req.body.password;
+  let hashedPassword = bcrypt.hashSync(password, 10);
+  users[result] = {id: result, email: req.body.email, password: hashedPassword}
+  req.session.user_id = result;
+  console.log(users);
+  res.redirect("/urls");
 });
 
 // this first part checks to see if the user enters nothing and if they do it sends a
@@ -219,11 +249,9 @@ app.post("/login", (req, res) => {
       });
     }
   }
-
   if(check === false) {
     res.status(403).send('password or email does not match please try again.')
   }
-
 });
 
 
@@ -241,10 +269,14 @@ app.post("/logout", (req, res) => {
 //this clears the cookie when you click logout and redircts to urls
 
 app.get("/login", (req, res) => {
+
+  if(users[req.session.user_id] !== undefined){
+    res.redirect("/urls");
+  }
   const userId = req.session.user_id;
   let templateVars = {
     user: users[userId]
-   };
+  };
   res.render("login_page", templateVars);
 });
 
@@ -253,10 +285,11 @@ app.get("/login", (req, res) => {
 const possibleValues = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 function generateRandomString(length, chars) {
-    var result = '';
-    for (var i = length; i > 0; --i){
-      result += chars[Math.floor(Math.random() * chars.length)];}
-    return result;
+  var result = '';
+  for (var i = length; i > 0; --i){
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
 }
 
 

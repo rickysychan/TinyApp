@@ -7,6 +7,9 @@
     <header>
     <% include ./partials/_header %>
     </header>
+    <% if(user == undefined) { %>
+<p> You need to be logged in </p>
+<% } else { %>
   <% if(Object.keys(urls).length === 0) { %>
 <h3> Please register or sign in,
       if you have signed in and you see this message
@@ -22,7 +25,7 @@
 </h4>
 </form>
     <% }; %>
-
+<% }; %>
 
 <a href="/urls/new">shorten a new URL</a>
 
