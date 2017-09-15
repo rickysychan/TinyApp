@@ -3,12 +3,12 @@
 <head>
   <title>TinyApp</title>
 </head>
-<body>
+<body style="padding:100px;">
     <header>
     <% include ./partials/_header %>
     </header>
     <% if(user == undefined) { %>
-<p> You need to be logged in </p>
+<h2> You need to be logged in </h2>
 <% } else { %>
   <% if(Object.keys(urls).length === 0) { %>
 <h3> Please register or sign in,
