@@ -1,6 +1,6 @@
-# Tweeter Project
+# TinyApp Project
 
-TinyApp is a full stack web application built with node and express that allows the user to make simple tweets which is stored in a MongoDB. 
+TynyApp is a full stack web application built with Node and Express that allows users to shorten long URLs (a la bit. ly). 
 
 ## Final product 
 
@@ -10,12 +10,12 @@ TinyApp is a full stack web application built with node and express that allows 
 
 ## Dependencies 
 
-- body-parser": "^1.15.2",
-- chance": "^1.0.2",
-- express": "^4.13.4",
-- md5": "^2.1.0",
-- moment": "^2.18.1",
-- mongodb": "^2.2.31"
+Node.js
+Express
+EJS
+bcrypt
+body-parser
+cookie-session
 
 ## getting started
 
